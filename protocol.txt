@@ -1,0 +1,54 @@
+all commands are in camel case
+
+//player functionality
+player;start
+player;stop;<timestamp>
+player;moveTimestamp;<in_milliseconds>
+player;changeSubtitleTrack;<hash>
+player;changeAudioTrack;<hash>
+player;changeVideo;<hash>
+
+//if client disconnect -> pause video for all other clients 
+event;leaveLobby
+
+//if new client connects -> move the player to current time of other clients
+event;joinLobby;<lobby_id>
+
+//retrieve current time of vlc player
+get;currentPlayerTime;<lobby_id>
+
+//get all lobbies currently active
+get;lobbies
+
+
+top level types:
+
+execute: does player stuff (eg: start, stop, move timestamp)
+event: lobby stuff, player stuff (e.g. player connects, disconnects)
+get: retrieve data (e.g. timestamp)
+
+
+
+client
+response;lobbies;[responseData]
+
+///////
+
+new format id:
+
+[<callID>];[<type>::<event>];<data>
+
+callID: arbitrary id used by client to associate resposne with request
+
+type: same as above
+event: same as above
+
+data: data used as function param: still not sure how this gets received
+    ideas:
+        as json obj
+        something of protobuf
+
+
+ex:
+
+[0123-5678];[event::joinLobby];[{"lobbyId": "lobby12354"}]
