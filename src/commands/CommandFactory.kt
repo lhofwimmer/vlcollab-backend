@@ -1,11 +1,8 @@
 package commands
 
-import managers.Json
 import models.CommandToClient
 import models.CommandToServer
 import models.User
-import org.slf4j.LoggerFactory
-import java.lang.Exception
 
 /**
  *example json:
@@ -19,21 +16,9 @@ import java.lang.Exception
  *   }
  */
 class CommandFactory(
-    private val json: String,
+    private val commandToServer: CommandToServer,
     private val user: User
 ) {
-    private val commandToServer: CommandToServer
-        get() {
-            return try {
-                Json.fromJson(json, CommandToServer::class.java)
-            } catch (ex: Exception) {
-                logger.error(ex.stackTrace.toString())
-                throw IllegalCommandException(ex.stackTrace.toString())
-            }
-        }
-
-    private val logger = LoggerFactory.getLogger("CommandFactory")
-
     fun produceCommand(): CommandToClient {
         return with(commandToServer) {
             when (type) {
@@ -41,7 +26,7 @@ class CommandFactory(
                 "EVENT" -> EventCommand(user, callId, event, data).executeCommand()
                 "EXECUTE" -> MediaPlayerCommand(user, callId, event, data).executeCommand()
                 "GET" -> GetCommand(user, callId, event, data).executeCommand()
-                else -> throw IllegalCommandException("<$type> is not a valid type")
+                else -> throw IllegalCommandException("${user.displayName} issued command <$event> which is not a valid method.")
             }
         }
     }

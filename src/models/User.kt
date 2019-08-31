@@ -6,7 +6,7 @@ import managers.LobbyManager
 import java.util.*
 
 data class User(
-    val session: DefaultWebSocketSession
+    @Transient val session: DefaultWebSocketSession
 ) {
     init {
         Globals.clients.add(this)
@@ -14,19 +14,17 @@ data class User(
 
     val userId: String = "user${UUID.randomUUID()}"
     var displayName: String = "User"
-    var currentLobby: Lobby? = null
+    @Transient var currentLobby: Lobby? = null
 
-    fun broadcastToOtherLobbyMembers(callback: (User) -> Unit) {
-        currentLobby?.users
-            ?.filter { it.userId != userId }
-            ?.forEach(callback)
+    fun broadcastTargets(): List<User> {
+        return currentLobby?.users ?: listOf(this)
     }
 
     fun joinLobby(lobbyId: String): Boolean = LobbyManager.addUserToLobby(userId, lobbyId)
 
     fun joinLobby(lobby: Lobby): Boolean = LobbyManager.addUserToLobby(this, lobby)
 
-    fun leaveLobby(): Boolean  = if(currentLobby != null) {
+    fun leaveLobby(): Boolean = if (currentLobby != null) {
         currentLobby?.let { LobbyManager.removeUserFromLobby(this, it) }
         true
     } else {

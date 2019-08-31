@@ -1,9 +1,9 @@
 package managers
 
-import models.Lobby
-import models.User
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import models.Lobby
+import models.User
 
 object LobbyManager {
 
@@ -26,7 +26,8 @@ object LobbyManager {
         }
     }
 
-    fun addUserToLobby(user: User, lobby: Lobby): Boolean = addUserToLobby(user.userId, lobby.lobbyId)
+    fun addUserToLobby(user: User, lobby: Lobby): Boolean =
+        addUserToLobby(user.userId, lobby.lobbyId)
 
     fun removeUserFromLobby(userId: String, lobbyId: String): Boolean {
         return try {
@@ -42,5 +43,6 @@ object LobbyManager {
         }
     }
 
-    fun removeUserFromLobby(user: User, lobby: Lobby): Boolean = removeUserFromLobby(user.userId, lobby.lobbyId)
+    fun removeUserFromLobby(user: User, lobby: Lobby): Boolean =
+        removeUserFromLobby(user.userId, lobby.lobbyId)
 }

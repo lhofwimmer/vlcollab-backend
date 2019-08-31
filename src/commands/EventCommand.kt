@@ -1,12 +1,8 @@
 package commands
 
-import managers.Json
 import models.CommandToClient
 import models.Lobby
 import models.User
-import java.lang.reflect.Method
-import kotlin.reflect.KFunction
-import kotlin.reflect.full.functions
 
 class EventCommand(
     private val user: User,
@@ -15,29 +11,11 @@ class EventCommand(
     private val data: List<String>
 ) : BaseCommand(callId) {
 
-    init {
-        if (commandMap.isEmpty()) {
-            val clazz = this::class.java.classLoader.loadClass(this::class.qualifiedName)
-            val cm: MutableMap<String, Method> = mutableMapOf()
-
-            clazz.methods
-                .forEach {
-                    cm[it.name] = it
-            }
-            cm[event]?.invoke(this, *data.toTypedArray())
-
-            this::class.functions
-                .filterIsInstance<KFunction<CommandToClient>>()
-                .forEach {
-                    @Suppress("UNCHECKED_CAST")
-                    commandMap[it.name] = it
-                }
-        }
-    }
-
-    override fun executeCommand(): CommandToClient {
-        println(commandMap[event])
-        return commandMap[event]?.call(*data.toTypedArray()) ?: CommandToClient(callId, "")
+    override fun executeCommand(): CommandToClient = when(event) {
+        "joinLobby" -> joinLobby()
+        "createLobby" -> createLobby()
+        "changeUsername" -> changeUsername()
+        else -> throw IllegalCommandException("${user.displayName} issued command <$event> which is not a valid method.")
     }
 
     /**
@@ -48,10 +26,21 @@ class EventCommand(
      *
      *  @return if successful: lobby object, else false
      */
-    private fun joinLobby(data: List<String>): CommandToClient {
+    private fun joinLobby(): CommandToClient {
         val lobbyId = data[1]
         user.joinLobby(lobbyId)
-        return toClient(user.currentLobby ?: "false")
+        return toClient(user, user.currentLobby ?: "false")
+    }
+
+    /**
+     * Leave the current lobby. Will not do anything if user is not in a lobby.
+     * 
+     * @return A message indicating the leaveLobby method has been called. Nothing else is provided as information is sufficient 
+     */
+    private fun leaveLobby(): CommandToClient {
+        // val lobbyId = data[1]
+        user.leaveLobby()
+        return toClient(user, "[EVENT::leaveLobby]")
     }
 
     /**
@@ -71,12 +60,12 @@ class EventCommand(
      *
      *  @return if successful: lobby object of created lobby
      */
-    private fun createLobby(data: List<String>): CommandToClient {
+    private fun createLobby(): CommandToClient {
         val displayName = data[0]
         val lobby = Lobby(displayName)
         user.joinLobby(lobby)
         println("Lobby created with name $displayName")
-        return toClient(lobby)
+        return toClient(user, lobby)
     }
 
     /**
@@ -88,13 +77,13 @@ class EventCommand(
      *
      * @return if successful: new name, else the previous name
      */
-    private fun changeUsername(data: List<String>): CommandToClient {
+    private fun changeUsername(): CommandToClient {
         val displayName = data[0]
-        return if (displayName.length > 50) {
+        return if (displayName.length < 50) {
             user.displayName = displayName
-            toClient(displayName)
+            toClient(user, displayName)
         } else {
-            toClient(user.displayName)
+            toClient(user, user.displayName)
         }
 
     }

@@ -1,35 +1,27 @@
-import commands.CommandFactory
-import managers.Globals.clients
-import models.User
 import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.application.log
-import io.ktor.features.ContentNegotiation
-import io.ktor.gson.gson
-import io.ktor.http.cio.websocket.CloseReason
-import io.ktor.http.cio.websocket.Frame
-import io.ktor.http.cio.websocket.close
-import io.ktor.http.cio.websocket.readText
+import io.ktor.http.cio.websocket.*
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.websocket.WebSockets
 import io.ktor.websocket.webSocket
+import commands.CommandFactory
+import managers.Globals.clients
+import managers.Json
+import models.CommandToServer
+import models.User
 import java.time.Duration
+import kotlin.run
 
 fun main() {
     embeddedServer(Netty, port = 8080, module = Application::module).start()
 }
 
+@Suppress("unused")
 fun Application.module() {
     log.info("Starting server")
-
-    install(ContentNegotiation) {
-        gson {
-            setPrettyPrinting()
-            serializeNulls()
-        }
-    }
 
     install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)
@@ -57,16 +49,27 @@ fun Application.module() {
                             log.info("removing client with id: <${client.userId}>")
                         }
                         else -> {
-                            val req = handleRequest(client, text)
-                            send(req.toJsonFrame())
-                        }
-                    }
-                }
-            }
+                            try {
+                                val command = Json.fromJson<CommandToServer>(text)
+                                if (command != null) {
+                                    val req = handleRequest(client, command)
 
-
-        }
+                                    req.user.broadcastTargets().forEach { user ->
+                                        run {
+                                            user.session.send(req.toJsonFrame())
+                                        }
+                                    }
+                                }
+                            } catch (ex: Exception) {
+                                log.error(ex.printStackTrace().toString())
+                                client.session.send("Unable to process message")
+                            }
+                        }//else
+                    }//when
+                }//if
+            }//for
+        }//webSocket
     }
 }
 
-fun handleRequest(user: User, json: String) = CommandFactory(json, user).produceCommand()
+fun handleRequest(user: User, command: CommandToServer) = CommandFactory(command, user).produceCommand()

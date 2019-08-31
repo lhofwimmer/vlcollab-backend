@@ -2,8 +2,6 @@ package commands
 
 import models.CommandToClient
 import models.User
-import kotlin.reflect.KFunction
-import kotlin.reflect.full.functions
 
 class MediaPlayerCommand(
     private val user: User,
@@ -11,18 +9,23 @@ class MediaPlayerCommand(
     private val event: String,
     private val data: List<String>
 ) : BaseCommand(callId) {
-    init {
-        if (commandMap.isEmpty()) {
-            this::class.functions
-                .filterIsInstance<KFunction<CommandToClient>>()
-                .forEach {
-                    @Suppress("UNCHECKED_CAST")
-                    commandMap[it.name] = it
-                }
-        }
+    override fun executeCommand(): CommandToClient = when(event) {
+        "stopPlayer" -> stopPlayer()
+        "startPlayer" -> startPlayer()
+        "moveTimestamp" -> moveTimestamp()
+        else -> throw IllegalCommandException("${user.displayName} issued command <$event> which is not a valid method.")
     }
 
-    override fun executeCommand(): CommandToClient {
-        return (commandMap[event]?.call(data) ?: CommandToClient(callId, "")) as CommandToClient
+    fun stopPlayer(): CommandToClient {
+
+        return toClient(user, "")
+    }
+
+    fun startPlayer(): CommandToClient {
+        return toClient(user, "")
+    }
+
+    fun moveTimestamp(): CommandToClient {
+        return toClient(user, "")
     }
 }

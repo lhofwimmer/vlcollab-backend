@@ -1,10 +1,18 @@
 package managers
 
-import com.google.gson.Gson
+import com.squareup.moshi.Moshi
+
 
 object Json{
-    val gson = Gson()
+    val moshi = Moshi.Builder().build()
 
-    fun toJson(obj: Any) = gson.toJson(obj)
-    fun <T>fromJson(json: String, `class`: Class<T>) = gson.fromJson(json,`class`)
+    inline fun <reified T>toJson(obj: T): String {
+        val jsonAdapter = moshi.adapter<T>(T::class.java)
+        return jsonAdapter.toJson(obj)
+    }
+
+    inline fun <reified T>fromJson(json: String): T? {
+        val jsonAdapter = moshi.adapter<T>(T::class.java)
+        return jsonAdapter.fromJson(json)
+    }
 }

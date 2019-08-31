@@ -1,6 +1,5 @@
 package managers
 
-import com.google.gson.Gson
 import models.Lobby
 import models.User
 import java.util.*

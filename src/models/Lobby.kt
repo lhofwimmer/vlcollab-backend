@@ -13,11 +13,14 @@ data class Lobby(
     val lobbyId: String = "lobby${UUID.randomUUID()}"
     val users: MutableList<User> = Collections.synchronizedList(mutableListOf())
 
-    fun iterateOverLobbyMembers(id: String, callback: (User) -> Unit) {
-        users.forEach{
-            callback(it)
-        }
-    }
+    //video position in milliseconds
+    var currentTimestamp: Int = -1
+
+    //video title shown in lobby list for example
+    var videoTitle: String = ""
+
+    //total length of current lobby video
+    var totalVideoLength: Int = -1
 
     fun removeUser(user: User) = users.remove(user)
 

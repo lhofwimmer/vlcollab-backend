@@ -3,8 +3,6 @@ package commands
 import managers.Globals
 import models.CommandToClient
 import models.User
-import kotlin.reflect.KFunction
-import kotlin.reflect.full.functions
 
 class GetCommand(
     private val user: User,
@@ -12,19 +10,10 @@ class GetCommand(
     private val event: String,
     private val data: List<String>
 ) : BaseCommand(callId) {
-    init {
-        if (commandMap.isEmpty()) {
-            this::class.functions
-                .filterIsInstance<KFunction<CommandToClient>>()
-                .forEach {
-                    @Suppress("UNCHECKED_CAST")
-                    commandMap[it.name] = it
-                }
-        }
-    }
 
-    override fun executeCommand(): CommandToClient {
-        return commandMap[event]?.call(*data.toTypedArray()) ?: CommandToClient(callId, "")
+    override fun executeCommand(): CommandToClient = when(event) {
+        "getLobbies" -> getLobbies()
+        else -> throw IllegalCommandException("${user.displayName} issued command <$event> which is not a valid method.")
     }
 
     /**
@@ -33,11 +22,11 @@ class GetCommand(
      *  start: integer representing first element to return, starts at 1
      *  size: integer representing page size
      */
-    fun getLobbies(data: List<String>): CommandToClient {
+    fun getLobbies(): CommandToClient {
         val start = data[0].toInt()
         val size = data[1].toInt()
         val lobbies = Globals.lobbies.slice(start..size)
-        return toClient(lobbies)
+        return toClient(user, lobbies)
     }
 
 }
